@@ -10,8 +10,8 @@ endpos = '!.?'       # Знаки окончания предложения
 reg_1 = re.compile(r'([,!\.\?:…])(?=\s)')
 wordgrammar = {
     'and': 15, 'where': 10, 'while': 10, 'with': 10, 'how': 10,
-    'before': 10, 'was': 8,
-	'the': 3, 'he': 4, 'to': 3
+	'before': 10, 'was': 8, 'for': 8, 'but': 10, 'were': 8,
+	'the': 3, 'he': 2, 'to': 3, 'of': 4, 'on': 4
 }
 
 
@@ -29,14 +29,14 @@ class ParserText(Command):
         # if abs(pos - self.depthword / 2) < 3:
             # p += 3 - abs(pos - self.depthword / 2)
         if pos > self.depthword - 5:
-            p -= 5 - (self.depthword - pos)
+            p -= 5 + (self.depthword - pos)
         if word in wordgrammar: p += wordgrammar[word]
         self.log.debug('TEXTPARSER:probabilityfun word=%s, pos=%d, depth=%d, rating=%d' \
             % (word, pos, self.depthword, p))
         return p
 
     def splitlongsubstring(self, tempstr, FIFO, maxlen):
-        vsum = 0
+        letternum = 0
         substword = []
         words = tempstr.split(' ')  # разбили фразу по словам...
         self.depthword = len(words)
@@ -45,14 +45,14 @@ class ParserText(Command):
         probabilitywords = [self.probabilityfun(words[x], x) for x in xrange(self.depthword)]
         # Считаем подстроки
         for x in xrange(self.depthword):
-            vsum += lenwords[x]  # Кол-во символов, если добавить слово
+            letternum += lenwords[x]  # Кол-во символов, если добавить слово
 
-            if vsum > maxlen - 13:  # Собственно критерий переноса
-                ps = probabilitywords[max(0, x - 6):x]
+            if letternum > maxlen - 13:  # Собственно критерий переноса
+                ps = probabilitywords[max(0, x - 8):x]
                 ps.reverse()
-                i = 5 - ps.index(max(ps)) + max(0, x - 6)
-                vsum = reduce(lambda res, x: res + x, lenwords[i:x], )
-                self.log.debug('TEXTPARSER:splitlongsubstring x=%d, i=%d, vsum=%d' % (x, i, vsum))
+                i = len(ps) - ps.index(max(ps)) + max(0, x - 8) - 1
+                letternum = reduce(lambda res, x: res + x, lenwords[i:x], )
+                self.log.debug('TEXTPARSER:splitlongsubstring x=%d, i=%d, letternum=%d' % (x, i, letternum))
                 substword.append(i)
 
         # Формируем подстроки
@@ -88,13 +88,12 @@ class ParserText(Command):
                     # Можем собрать две части?
                     if len(subline) + len(tempstr) <= maxlen:
                         # Может не надо добавлять пару слов к концу предложения
-                        if len(tempstr) > 1 and \
-                           tempstr[-1] in endpos and \
-                           len(subline) < maxlen / 4:
+                        if not (tempstr != '' and tempstr[-1] in endpos) or \
+                            len(tempstr) < 3 * maxlen / 4:
+                            tempstr += subline
+                        else:
                             self.FIFO.append(tempstr.lstrip())
                             tempstr = subline.lstrip()
-                        else:
-                            tempstr += subline
                             continue
                     else:
                         if len(tempstr) > 0 and \
@@ -107,6 +106,7 @@ class ParserText(Command):
                             self.FIFO.append(tempstr.lstrip())
                         tempstr = subline.lstrip()
 
+                # Подбираем "хвосты", которые остались после обработки абзаца
                 if len(tempstr) > maxlen:
                     tempstr = self.splitlongsubstring(tempstr, self.FIFO, maxlen)
                 if len(tempstr) > 0:
