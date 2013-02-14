@@ -11,7 +11,7 @@ reg_1 = re.compile(r'([,!\.\?:…])(?=\s)')
 wordgrammar = {
     'and': 15, 'where': 10, 'while': 10, 'with': 10, 'how': 10,
 	'before': 10, 'was': 8, 'for': 8, 'but': 10, 'were': 8,
-	'the': 3, 'he': 2, 'to': 3, 'of': 4, 'on': 4
+	'the': 3, 'he': 2, 'to': 3, 'of': 4, 'on': 4, 'as': 5
 }
 
 
@@ -88,12 +88,11 @@ class ParserText(Command):
                     # Можем собрать две части?
                     if len(subline) + len(tempstr) <= maxlen:
                         # Может не надо добавлять пару слов к концу предложения
-                        if not (tempstr != '' and tempstr[-1] in endpos) or \
-                            len(tempstr) < 3 * maxlen / 4:
-                            tempstr += subline
-                        else:
+                        if len(tempstr) > 3 * maxlen / 4 and tempstr[-1] in endpos:
                             self.FIFO.append(tempstr.lstrip())
                             tempstr = subline.lstrip()
+                        else:
+                            tempstr += subline
                             continue
                     else:
                         if len(tempstr) > 0 and \
