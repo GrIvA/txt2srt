@@ -10,8 +10,8 @@ endpos = '!.?'       # Знаки окончания предложения
 reg_1 = re.compile(r'([,!\.\?:…])(?=\s)')
 wordgrammar = {
     'and': 15, 'where': 10, 'while': 10, 'with': 10, 'how': 10,
-	'before': 10, 'was': 8, 'for': 8, 'but': 10, 'were': 8,
-	'the': 3, 'he': 2, 'to': 3, 'of': 4, 'on': 4, 'as': 5
+    'before': 10, 'was': 8, 'for': 8, 'but': 10, 'were': 8, 'because': 10,
+    'the': 3, 'he': 2, 'to': 3, 'of': 4, 'on': 4, 'as': 5
 }
 
 
@@ -31,8 +31,8 @@ class ParserText(Command):
         if pos > self.depthword - 5:
             p -= 5 + (self.depthword - pos)
         if word in wordgrammar: p += wordgrammar[word]
-        self.log.debug('TEXTPARSER:probabilityfun word=%s, pos=%d, depth=%d, rating=%d' \
-            % (word, pos, self.depthword, p))
+        self.log.debug('TEXTPARSER:probabilityfun word=%s, pos=%d, depth=%d, rating=%d'
+                       % (word, pos, self.depthword, p))
         return p
 
     def splitlongsubstring(self, tempstr, FIFO, maxlen):
@@ -73,7 +73,7 @@ class ParserText(Command):
         for line in self.app.file_txt:
             if len(line) > maxlen:
                 iter = reg_1.split(line)
-                for subline in iter:
+                for index, subline in enumerate(iter):
                     # Добавляем к строке знаки препинания
                     if len(subline) == 1:
                         tempstr += subline
@@ -87,19 +87,26 @@ class ParserText(Command):
 
                     # Можем собрать две части?
                     if len(subline) + len(tempstr) <= maxlen:
-                        # Может не надо добавлять пару слов к концу предложения
-                        if len(tempstr) > 3 * maxlen / 4 and tempstr[-1] in endpos:
+                        # Если следующий кусок текста большой,
+                        # не будем даже пытаться склеить "висячие" куски
+                        if len(tempstr) > 0 and tempstr[-1] in endpos and \
+                                index < len(iter) - 1 and \
+                                len(tempstr) + len(subline) + len(iter[index + 1]) > maxlen:
                             self.FIFO.append(tempstr.lstrip())
                             tempstr = subline.lstrip()
+                            continue
                         else:
                             tempstr += subline
                             continue
                     else:
+                        '''
                         if len(tempstr) > 0 and \
-                           len(tempstr) < maxlen / 4 and\
-                           not (tempstr[-1] in endpos):  # Вводный слова, обороты
+                                len(tempstr) < maxlen / 4 and \
+                                not (tempstr[-1] in endpos):
+                            # Вводный слова, обороты
                             tempstr += subline
                             continue
+                        '''
 
                         if len(tempstr.lstrip()) > 0:
                             self.FIFO.append(tempstr.lstrip())

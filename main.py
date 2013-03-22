@@ -29,14 +29,14 @@ class GeneApp(App):
             default=False,
             action='store_true',
             help='try interpret the read file',
-            )
+        )
         self.parser.add_argument(
             '-n', '--no-time',
             default=False,
             dest='no_time',
             action='store_true',
             help='no display number/time SRT line',
-            )
+        )
         self.parser.add_argument(
             '-m', '--max-wide',
             action='store',
@@ -44,7 +44,7 @@ class GeneApp(App):
             # const=80,
             default=80,
             help='max wide each line',
-            )
+        )
         commands = {
             'textparse': ParserText,
             'readfile': ReadFile,

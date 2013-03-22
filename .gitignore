@@ -1,5 +1,6 @@
 *~
 *.pyc
 *.txt
+*.srt
 txt2srt.sublime*
-
+.ropeproject\
