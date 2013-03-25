@@ -90,8 +90,8 @@ class ParserText(Command):
                         # Если следующий кусок текста большой,
                         # не будем даже пытаться склеить "висячие" куски
                         if len(tempstr) > 0 and tempstr[-1] in endpos and \
-                                index < len(iter) - 1 and \
-                                len(tempstr) + len(subline) + len(iter[index + 1]) > maxlen:
+                                index < len(iter) - 2 and \
+                                len(tempstr) + len(subline) + len(iter[index + 1]) + len(iter[index + 2]) > maxlen:
                             self.FIFO.append(tempstr.lstrip())
                             tempstr = subline.lstrip()
                             continue
@@ -99,14 +99,14 @@ class ParserText(Command):
                             tempstr += subline
                             continue
                     else:
-                        '''
+                        # Если после вводного слова идет длинная фраза, то ее
+                        # не надо разрывать
                         if len(tempstr) > 0 and \
                                 len(tempstr) < maxlen / 4 and \
                                 not (tempstr[-1] in endpos):
                             # Вводный слова, обороты
                             tempstr += subline
                             continue
-                        '''
 
                         if len(tempstr.lstrip()) > 0:
                             self.FIFO.append(tempstr.lstrip())
